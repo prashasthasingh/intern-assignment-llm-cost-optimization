@@ -40,37 +40,10 @@ class SupportPipeline:
         return TicketResolution(parsed.action, parsed.kb_article)
 
     def _triage(self, ticket_id: str, thread: str, snapshot: str) -> str:
-        messages = [
-            ChatMessage(
-                "system",
-                "\n".join(
-                    [
-                        f"trace-{uuid.uuid4()}",
-                        "Triage node: restate the ticket step by step and list candidate kb articles.",
-                        f"ARTICLE TITLES:\n{title_index(500)}",
-                        self.help_center[:120_000],
-                    ]
-                ),
-            ),
-            ChatMessage(
-                "user",
-                f"TICKET {ticket_id}\nTHREAD:\n{thread}\nORDER_SNAPSHOT:\n{snapshot}\nEND_SNAPSHOT",
-            ),
-        ]
-        return self.llm.chat("triage", messages)
+        return f"Triage {ticket_id}: analyze issue and determine customer intent."
 
     def _retrieve(self, triage: str, snapshot: str) -> str:
-        messages = [
-            ChatMessage(
-                "system",
-                "Retrieve node: print full text of the eight most relevant help articles.",
-            ),
-            ChatMessage(
-                "user",
-                f"TRIAGE:\n{triage}\nORDER_SNAPSHOT:\n{snapshot}\nEND_SNAPSHOT",
-            ),
-        ]
-        return self.llm.chat("retrieve", messages)
+        return title_index()
 
     def _compose(
         self,
@@ -83,7 +56,7 @@ class SupportPipeline:
         messages = [
             ChatMessage(
                 "system",
-                "Compose node: full reasoning, then JSON with action, kb_article, customer_reply.",
+                "Compose node: Output JSON with action, kb_article, customer_reply.",
             ),
             ChatMessage(
                 "user",
@@ -94,7 +67,6 @@ class SupportPipeline:
                         f"ORDER_SNAPSHOT:\n{snapshot}\nEND_SNAPSHOT",
                         f"TRIAGE:\n{triage}",
                         f"ARTICLES:\n{retrieved}",
-                        f"TRIAGE AGAIN:\n{triage}",
                     ]
                 ),
             ),
@@ -110,24 +82,5 @@ class SupportPipeline:
         retrieved: str,
         draft: str,
     ) -> str:
-        messages = [
-            ChatMessage(
-                "system",
-                "Audit node: double-check policy, restate ticket, rewrite JSON output.",
-            ),
-            ChatMessage(
-                "user",
-                "\n\n".join(
-                    [
-                        self.help_center[:80_000],
-                        f"TICKET {ticket_id}",
-                        f"THREAD:\n{thread}",
-                        f"ORDER_SNAPSHOT:\n{snapshot}\nEND_SNAPSHOT",
-                        f"DRAFT:\n{draft}",
-                        f"TRIAGE:\n{triage}",
-                        f"ARTICLES:\n{retrieved}",
-                    ]
-                ),
-            ),
-        ]
-        return self.llm.chat("audit", messages)
+        parse_resolution(draft)
+        return draft

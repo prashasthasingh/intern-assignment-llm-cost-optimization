@@ -67,10 +67,7 @@ class SupportCopilot:
                 _FEW_SHOT,
                 "HELP CENTER:",
                 all_articles_blob(),
-                (
-                    "Instructions: Think step by step. Write full reasoning, quote any article "
-                    "you rely on, then output JSON with action, kb_article, customer_reply."
-                ),
+                "Instructions: Output JSON with action, kb_article, customer_reply.",
             ]
         )
         user = "\n\n".join(
